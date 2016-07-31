@@ -31,6 +31,25 @@ var showQuestion = function(question) {
 	return result;
 };
 
+var showInspiration = function(inspiration) {
+	var result = $('.templates .inspiration').clone();
+
+	var inspirationElem = result.find('.display-name a');
+	inspirationElem.attr('href', inspiration.user.link);
+	inspirationElem.text(inspiration.user.display_name);
+
+	var reputation = result.find('.reputation');
+	reputation.text(inspiration.user.reputation);
+
+	var postCount = result.find('.post-count');
+	postCount.text(inspiration.post_count);
+
+	var score = result.find('.post-score');
+	score.text(inspiration.score);
+
+	return result;
+};
+
 
 // this function takes the results object from StackOverflow
 // and returns the number of results and tags to be appended to DOM
@@ -81,6 +100,32 @@ var getUnanswered = function(tags) {
 	});
 };
 
+var getInspiration = function(tag) {
+	var request = {
+		site: 'stackoverflow'
+	};
+
+	$.ajax({
+		url: "http://api.stackexchange.com/2.2/tags/"+ tag +"/top-answerers/all_time",
+		data: request,
+		dataType: "jsonp",
+		type: "GET"
+	})
+	.done(function(result) {
+		var searchResults = showSearchResults(tag, result.items.length);
+
+		$('.search-results').html(searchResults);
+
+		$.each(result.items, function(i, item) {
+			var inspiration = showInspiration(item);
+			$('.results').append(inspiration);
+		});
+	})
+	.fail(function(jqXHR, error) {
+		var errorElem = showError(error);
+		$('.search-results').append(errorElem);
+	});
+};
 
 $(document).ready( function() {
 	$('.unanswered-getter').submit( function(e){
@@ -90,5 +135,14 @@ $(document).ready( function() {
 		// get the value of the tags the user submitted
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
+		$(this)[0].reset();
+	});
+
+	$('.inspiration-getter').submit(function(e) {
+		e.preventDefault();
+		$('.results').html('');
+		var tag = $(this).find("input[name='answerers']").val();
+		getInspiration(tag);
+		$(this)[0].reset();
 	});
 });
